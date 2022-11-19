@@ -1,15 +1,32 @@
 import random
 import arcade
 from arcade.examples.snow import MyGame
+from pyglet.math import Vec2
 
 from constants import *
 
 
+class Explosion(arcade.Sprite):
+    def __init__(self, texture_list):
+        super().__init__()
+
+        # Explosion
+        self.textures = texture_list
+        self.current_texture = 0
+
+    def update(self):
+        super().update()
+        self.current_texture += 1
+
+        if self.current_texture < len(self.textures):
+            self.set_texture(self.current_texture)
+        else:
+            self.kill()
+
+
 class MenuView(arcade.View):
     def on_show_view(self):
-        arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
-
-        arcade.set_viewport(0, self.window.width, 0, self.window.height)
+        arcade.set_background_color(arcade.color.WHITE)
 
     def on_draw(self):
         self.clear()
@@ -26,8 +43,7 @@ class MenuView(arcade.View):
         self.window.show_view(game)
 
 
-class MyGame(arcade.Window):
-
+class MyGame(arcade.View):
     def __init__(self):
         super().__init__()
 
@@ -36,6 +52,10 @@ class MyGame(arcade.Window):
         self.player_bullet_list = None
         self.enemy_bullet_list = None
         self.shield_list = None
+        self.explosions_list = None
+
+        self.camera_sprites = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
+        self.camera_gui = arcade.Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         # Background
         self.background = arcade.load_texture("Sprite/Background.jpg")
@@ -59,7 +79,7 @@ class MyGame(arcade.Window):
         self.enemy_change_x = -ENEMY_SPEED
 
         # Don't show the mouse cursor
-        self.set_mouse_visible(False)
+        self.window.set_mouse_visible(False)
 
         # Load sounds. Sounds from kenney.nl
         self.gun_sound = arcade.load_sound(":resources:sounds/hurt5.wav")
@@ -75,7 +95,20 @@ class MyGame(arcade.Window):
         self.up = False
         self.down = False
 
-        arcade.set_background_color(arcade.color.AMAZON)
+        # Explosion Gif
+        self.explosion_texture_list = []
+
+        columns = 4
+        count = 16
+        sprite_width = 60
+        sprite_height = 60
+        file_name = "Sprite/Explosion.png"
+
+        self.explosion_texture_list = arcade.load_spritesheet(file_name, sprite_width, sprite_height, columns, count)
+
+    def on_show_view(self):
+        arcade.set_background_color(arcade.color.BLACK)
+
     def setup_level_one(self):
         for i in range(self.enemy_diff):
             enemy = arcade.Sprite("Sprite/enemySpaceship2.png")
@@ -87,6 +120,24 @@ class MyGame(arcade.Window):
             self.enemy_list.append(enemy)
             self.enemy_count += 1
 
+    def on_draw(self):
+        self.clear()
+
+        arcade.draw_texture_rectangle(0, 0, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, self.background)
+
+        self.enemy_list.draw()
+        self.player_bullet_list.draw()
+        self.enemy_bullet_list.draw()
+        self.shield_list.draw()
+        self.player_list.draw()
+        self.explosions_list.draw()
+
+        arcade.draw_text(f"Score: {self.score}", 10, 20, arcade.color.WHITE, 14)
+
+        if self.game_state == GAME_OVER:
+            arcade.draw_text("GAME OVER", 180, 300, arcade.color.WHITE, 55)
+            self.window.set_mouse_visible(True)
+
     def setup(self):
         self.game_state = PLAY_GAME
 
@@ -95,6 +146,7 @@ class MyGame(arcade.Window):
         self.enemy_list = arcade.SpriteList()
         self.player_bullet_list = arcade.SpriteList()
         self.enemy_bullet_list = arcade.SpriteList()
+        self.explosions_list = arcade.SpriteList()
         self.shield_list = arcade.SpriteList(is_static=True)
 
         # Set up the player
@@ -105,28 +157,13 @@ class MyGame(arcade.Window):
         self.player_sprite.center_y = 100
         self.player_list.append(self.player_sprite)
 
-        self.setup_level_one()
-
-    def on_draw(self):
-        self.clear()
-
-        arcade.draw_texture_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, self.background)
-
-        self.enemy_list.draw()
-        self.player_bullet_list.draw()
-        self.enemy_bullet_list.draw()
-        self.shield_list.draw()
-        self.player_list.draw()
-
-        arcade.draw_text(f"Score: {self.score}", 10, 20, arcade.color.WHITE, 14)
-
-        arcade.draw_text(f"Enemy count {self.enemy_count}", 500, 300, arcade.color.WHITE, 14)
-
-        if self.game_state == GAME_OVER:
-            arcade.draw_text("GAME OVER", 180, 300, arcade.color.WHITE, 55)
-            self.set_mouse_visible(True)
+        #self.setup_level_one()
 
     def on_key_press(self, key, modifiers):
+        if key == arcade.key.ESCAPE:
+            pause = PauseView(self)
+            self.window.show_view(pause)
+
         if self.game_state != 1:
             if key == arcade.key.UP or key == arcade.key.W:
                 self.up = True
@@ -192,26 +229,12 @@ class MyGame(arcade.Window):
 
     def process_enemy_bullets(self):
 
-        # Move the bullets
         self.enemy_bullet_list.update()
 
-        # Loop through each bullet
         for bullet in self.enemy_bullet_list:
-            # Check this bullet to see if it hit a shield
-            hit_list = arcade.check_for_collision_with_list(bullet, self.shield_list)
-
-            # If it did, get rid of the bullet and shield blocks
-            if len(hit_list) > 0:
-                bullet.remove_from_sprite_lists()
-                for shield in hit_list:
-                    shield.remove_from_sprite_lists()
-                continue
-
-            # See if the player got hit with a bullet
             if arcade.check_for_collision_with_list(self.player_sprite, self.enemy_bullet_list):
                 self.game_state = GAME_OVER
 
-            # If the bullet falls off the screen get rid of it
             if bullet.top < 0:
                 bullet.remove_from_sprite_lists()
 
@@ -252,6 +275,7 @@ class MyGame(arcade.Window):
                 bullet.remove_from_sprite_lists()
 
     def on_update(self, delta_time):
+
         if self.right:
             self.player_sprite.center_x += PLAYER_SPD * delta_time
         if self.left:
@@ -261,17 +285,34 @@ class MyGame(arcade.Window):
         if self.down:
             self.player_sprite.center_y -= PLAYER_SPD * delta_time
 
-        if self.game_state == GAME_OVER:
-            return
+
 
         self.total_time += delta_time
 
+        self.explosions_list.update()
         self.allow_enemies_to_fire()
         self.process_enemy_bullets()
         self.process_player_bullets()
 
         # if len(self.enemy_list) == 0:
         #   self.setup_level_one()
+
+        for bullet in self.enemy_bullet_list:
+            hit_list = arcade.check_for_collision_with_list(bullet, self.player_list)
+
+            if len(hit_list) > 0:
+                explosion = Explosion(self.explosion_texture_list)
+
+                explosion.center_x = hit_list[0].center_x
+                explosion.center_y = hit_list[0].center_y
+
+                self.explosions_list.append(explosion)
+
+                explosion.update()
+
+                bullet.remove_from_sprite_lists()
+                self.player_list[0].remove_from_sprite_lists()
+
 
         if self.total_time > self.enemy_diff and self.score < 10:
             for i in range(self.enemy_count):
@@ -296,6 +337,17 @@ class MyGame(arcade.Window):
 
         self.update_enemies()
 
+        self.scroll_to_bg()
+
+        if self.game_state == GAME_OVER:
+            return
+
+    def scroll_to_bg(self):
+
+        position = Vec2(self.player_sprite.center_x - SCREEN_WIDTH / 2,
+                        self.player_sprite.center_y - SCREEN_HEIGHT / 2)
+
+        self.camera_sprites.move_to(position, CAMERA_SPEED)
 
 class PauseView(arcade.View):
     def __init__(self, game_view):
@@ -311,7 +363,6 @@ class PauseView(arcade.View):
         player_sprite = self.game_view.player_sprite
         player_sprite.draw()
 
-        # draw an orange filter over him
         arcade.draw_lrtb_rectangle_filled(left=player_sprite.left,
                                           right=player_sprite.right,
                                           top=player_sprite.top,
@@ -336,10 +387,11 @@ class PauseView(arcade.View):
                          anchor_x="center")
 
     def on_key_press(self, key, _modifiers):
-        if key == arcade.key.ESCAPE:  # resume game
+        if key == arcade.key.ESCAPE:
             self.window.show_view(self.game_view)
-        elif key == arcade.key.ENTER:  # reset game
+        elif key == arcade.key.ENTER:
             game = MyGame()
+            game.setup()
             self.window.show_view(game)
 
 
