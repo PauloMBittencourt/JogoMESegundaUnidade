@@ -90,10 +90,12 @@ class MyGame(arcade.View):
         # player move
         self.player_x = 100
         self.player_y = 100
+        self.player_spd = PLAYER_SPD
         self.right = False
         self.left = False
         self.up = False
         self.down = False
+        self.turbo = False
 
         # Explosion Gif
         self.explosion_texture_list = []
@@ -134,6 +136,8 @@ class MyGame(arcade.View):
                 self.left = True
             elif key == arcade.key.RIGHT or key == arcade.key.D:
                 self.right = True
+            elif key == arcade.key.LALT:
+                self.turbo = True
 
             if key == arcade.key.SPACE:
                 if len(self.player_bullet_list) < MAX_PLAYER_BULLETS:
@@ -160,6 +164,8 @@ class MyGame(arcade.View):
                 self.left = False
             elif key == arcade.key.RIGHT or key == arcade.key.D:
                 self.right = False
+            if key == arcade.key.LALT:
+                self.turbo = False
 
     def update_enemies(self):
         for enemy in self.enemy_list:
@@ -327,15 +333,18 @@ class MyGame(arcade.View):
         # self.setup_level_one()
 
     def on_update(self, delta_time):
-
+        if self.turbo:
+            self.player_spd = 650
+        else:
+            self.player_spd = PLAYER_SPD
         if self.right:
-            self.player_sprite.center_x += PLAYER_SPD * delta_time
+            self.player_sprite.center_x += self.player_spd * delta_time
         if self.left:
-            self.player_sprite.center_x -= PLAYER_SPD * delta_time
+            self.player_sprite.center_x -= self.player_spd * delta_time
         if self.up:
-            self.player_sprite.center_y += PLAYER_SPD * delta_time
+            self.player_sprite.center_y += self.player_spd * delta_time
         if self.down:
-            self.player_sprite.center_y -= PLAYER_SPD * delta_time
+            self.player_sprite.center_y -= self.player_spd * delta_time
 
         self.total_time += delta_time
 
