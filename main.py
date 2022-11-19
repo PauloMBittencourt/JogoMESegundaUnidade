@@ -5,7 +5,7 @@ from pyglet.math import Vec2
 from pygame import mixer
 from constants import *
 
-#music init
+#lab init
 mixer.init()
 
 class Explosion(arcade.Sprite):
