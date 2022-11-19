@@ -120,45 +120,6 @@ class MyGame(arcade.View):
             self.enemy_list.append(enemy)
             self.enemy_count += 1
 
-    def on_draw(self):
-        self.clear()
-
-        arcade.draw_texture_rectangle(0, 0, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2, self.background)
-
-        self.enemy_list.draw()
-        self.player_bullet_list.draw()
-        self.enemy_bullet_list.draw()
-        self.shield_list.draw()
-        self.player_list.draw()
-        self.explosions_list.draw()
-
-        arcade.draw_text(f"Score: {self.score}", 10, 20, arcade.color.WHITE, 14)
-
-        if self.game_state == GAME_OVER:
-            arcade.draw_text("GAME OVER", 180, 300, arcade.color.WHITE, 55)
-            self.window.set_mouse_visible(True)
-
-    def setup(self):
-        self.game_state = PLAY_GAME
-
-        # Sprite lists
-        self.player_list = arcade.SpriteList()
-        self.enemy_list = arcade.SpriteList()
-        self.player_bullet_list = arcade.SpriteList()
-        self.enemy_bullet_list = arcade.SpriteList()
-        self.explosions_list = arcade.SpriteList()
-        self.shield_list = arcade.SpriteList(is_static=True)
-
-        # Set up the player
-        self.score = 0
-
-        self.player_sprite = arcade.Sprite("Sprite/playerSpaceship.png", SPRITE_SCALING_PLAYER)
-        self.player_sprite.center_x = 400
-        self.player_sprite.center_y = 100
-        self.player_list.append(self.player_sprite)
-
-        #self.setup_level_one()
-
     def on_key_press(self, key, modifiers):
         if key == arcade.key.ESCAPE:
             pause = PauseView(self)
@@ -238,65 +199,6 @@ class MyGame(arcade.View):
             if bullet.top < 0:
                 bullet.remove_from_sprite_lists()
 
-    def process_player_bullets(self):
-
-        # Move the bullets
-        self.player_bullet_list.update()
-
-        # Loop through each bullet
-        for bullet in self.player_bullet_list:
-
-            # Check this bullet to see if it hit a enemy
-            hit_list = arcade.check_for_collision_with_list(bullet, self.shield_list)
-            # If it did, get rid of the bullet
-            if len(hit_list) > 0:
-                bullet.remove_from_sprite_lists()
-                for shield in hit_list:
-                    shield.remove_from_sprite_lists()
-                continue
-
-            # Check this bullet to see if it hit a enemy
-            hit_list = arcade.check_for_collision_with_list(bullet, self.enemy_list)
-
-            # If it did, get rid of the bullet
-            if len(hit_list) > 0:
-                bullet.remove_from_sprite_lists()
-
-            # For every enemy we hit, add to the score and remove the enemy
-            for enemy in hit_list:
-                enemy.remove_from_sprite_lists()
-                self.score += 1
-
-                # Hit Sound
-                arcade.play_sound(self.hit_sound)
-
-            # If the bullet flies off-screen, remove it.
-            if bullet.bottom > SCREEN_HEIGHT:
-                bullet.remove_from_sprite_lists()
-
-    def on_update(self, delta_time):
-
-        if self.right:
-            self.player_sprite.center_x += PLAYER_SPD * delta_time
-        if self.left:
-            self.player_sprite.center_x -= PLAYER_SPD * delta_time
-        if self.up:
-            self.player_sprite.center_y += PLAYER_SPD * delta_time
-        if self.down:
-            self.player_sprite.center_y -= PLAYER_SPD * delta_time
-
-
-
-        self.total_time += delta_time
-
-        self.explosions_list.update()
-        self.allow_enemies_to_fire()
-        self.process_enemy_bullets()
-        self.process_player_bullets()
-
-        # if len(self.enemy_list) == 0:
-        #   self.setup_level_one()
-
         for bullet in self.enemy_bullet_list:
             hit_list = arcade.check_for_collision_with_list(bullet, self.player_list)
 
@@ -313,6 +215,138 @@ class MyGame(arcade.View):
                 bullet.remove_from_sprite_lists()
                 self.player_list[0].remove_from_sprite_lists()
 
+    def process_player_bullets(self):
+        self.player_bullet_list.update()
+
+        for bullet in self.player_bullet_list:
+
+            hit_list = arcade.check_for_collision_with_list(bullet, self.enemy_list)
+
+            if len(hit_list) > 0:
+                bullet.remove_from_sprite_lists()
+
+            for enemy in hit_list:
+                if len(hit_list) > 0:
+                    explosion = Explosion(self.explosion_texture_list)
+
+                    explosion.center_x = hit_list[0].center_x
+                    explosion.center_y = hit_list[0].center_y
+
+                    self.explosions_list.append(explosion)
+
+                    explosion.update()
+
+                    enemy.remove_from_sprite_lists()
+
+                self.score += 1
+
+                # Hit Sound
+                arcade.play_sound(self.hit_sound)
+
+            if bullet.bottom > SCREEN_HEIGHT:
+                bullet.remove_from_sprite_lists()
+
+    def process_collision(self):
+        self.player_list.update()
+        self.enemy_list.update()
+
+        for player in self.player_list:
+
+            hit_list = arcade.check_for_collision_with_list(player, self.enemy_list)
+
+            if len(hit_list) > 0:
+                explosion = Explosion(self.explosion_texture_list)
+
+                explosion.center_x = hit_list[0].center_x
+                explosion.center_y = hit_list[0].center_y
+
+                self.explosions_list.append(explosion)
+
+                explosion.update()
+
+                for enemy in self.enemy_list:
+                    hit = arcade.check_for_collision_with_list(enemy, self.player_list)
+
+                    if len(hit) > 0:
+                        explosion = Explosion(self.explosion_texture_list)
+
+                        explosion.center_x = hit[0].center_x
+                        explosion.center_y = hit[0].center_y
+
+                        self.explosions_list.append(explosion)
+
+                        explosion.update()
+
+                        enemy.remove_from_sprite_lists()
+
+                player.remove_from_sprite_lists()
+
+                self.game_state = GAME_OVER
+
+    def on_draw(self):
+        self.clear()
+
+        arcade.draw_texture_rectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, self.background)
+        arcade.draw_texture_rectangle(SCREEN_WIDTH, 0, SCREEN_WIDTH, SCREEN_HEIGHT, self.background)
+        arcade.draw_texture_rectangle(0, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT, self.background)
+        arcade.draw_texture_rectangle(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT, self.background)
+
+        self.enemy_list.draw()
+        self.player_bullet_list.draw()
+        self.enemy_bullet_list.draw()
+        self.shield_list.draw()
+        self.player_list.draw()
+        self.explosions_list.draw()
+
+        arcade.draw_text(f"Score: {self.score}", 10, 20, arcade.color.WHITE, 14)
+
+        if self.game_state == GAME_OVER:
+            arcade.draw_text("GAME OVER", 180, 300, arcade.color.WHITE, 55)
+            arcade.draw_text("Press Esc and Them Enter To Restart", 125, 260, arcade.color.WHITE, 25)
+            self.window.set_mouse_visible(True)
+
+    def setup(self):
+        self.game_state = PLAY_GAME
+
+        # Sprite lists
+        self.player_list = arcade.SpriteList()
+        self.enemy_list = arcade.SpriteList()
+        self.player_bullet_list = arcade.SpriteList()
+        self.enemy_bullet_list = arcade.SpriteList()
+        self.explosions_list = arcade.SpriteList()
+        self.shield_list = arcade.SpriteList(is_static=True)
+
+        # Set up the player
+        self.score = 0
+
+        self.player_sprite = arcade.Sprite("Sprite/playerSpaceship.png", SPRITE_SCALING_PLAYER)
+        self.player_sprite.center_x = 400
+        self.player_sprite.center_y = 100
+        self.player_list.append(self.player_sprite)
+
+        # self.setup_level_one()
+
+    def on_update(self, delta_time):
+
+        if self.right:
+            self.player_sprite.center_x += PLAYER_SPD * delta_time
+        if self.left:
+            self.player_sprite.center_x -= PLAYER_SPD * delta_time
+        if self.up:
+            self.player_sprite.center_y += PLAYER_SPD * delta_time
+        if self.down:
+            self.player_sprite.center_y -= PLAYER_SPD * delta_time
+
+        self.total_time += delta_time
+
+        self.explosions_list.update()
+        self.allow_enemies_to_fire()
+        self.process_enemy_bullets()
+        self.process_player_bullets()
+        self.process_collision()
+
+        # if len(self.enemy_list) == 0:
+        #   self.setup_level_one()
 
         if self.total_time > self.enemy_diff and self.score < 10:
             for i in range(self.enemy_count):
@@ -337,17 +371,9 @@ class MyGame(arcade.View):
 
         self.update_enemies()
 
-        self.scroll_to_bg()
-
         if self.game_state == GAME_OVER:
             return
 
-    def scroll_to_bg(self):
-
-        position = Vec2(self.player_sprite.center_x - SCREEN_WIDTH / 2,
-                        self.player_sprite.center_y - SCREEN_HEIGHT / 2)
-
-        self.camera_sprites.move_to(position, CAMERA_SPEED)
 
 class PauseView(arcade.View):
     def __init__(self, game_view):
