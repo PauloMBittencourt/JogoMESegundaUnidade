@@ -2,11 +2,7 @@ import random
 import arcade
 from arcade.examples.snow import MyGame
 from pyglet.math import Vec2
-from pygame import mixer
 from constants import *
-
-#lab init
-mixer.init()
 
 class Explosion(arcade.Sprite):
     def __init__(self, texture_list):
@@ -27,9 +23,8 @@ class Explosion(arcade.Sprite):
 
 
 class MenuView(arcade.View):
-    mixer.music.load('Sprite/On My Way.wav')
-    mixer.music.play(-1)
-    mixer.music.set_volume(0.5)
+    music = arcade.load_sound('Sprite/On My Way.wav',False)
+    arcade.play_sound(music,0.5,0.0,True)
 
     def on_show_view(self):
         arcade.set_background_color(arcade.color.WHITE)
@@ -363,7 +358,7 @@ class MyGame(arcade.View):
         # if len(self.enemy_list) == 0:
         #   self.setup_level_one()
 
-        if self.total_time > self.enemy_diff and self.score < 10:
+        if self.total_time > self.enemy_diff and self.score < 20:
             for i in range(self.enemy_count):
 
                 enemy = arcade.Sprite("Sprite/enemySpaceship2.png", SPRITE_SCALING_enemy)
