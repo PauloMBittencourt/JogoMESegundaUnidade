@@ -2,9 +2,11 @@ import random
 import arcade
 from arcade.examples.snow import MyGame
 from pyglet.math import Vec2
-
+from pygame import mixer
 from constants import *
 
+#music init
+mixer.init()
 
 class Explosion(arcade.Sprite):
     def __init__(self, texture_list):
@@ -25,6 +27,10 @@ class Explosion(arcade.Sprite):
 
 
 class MenuView(arcade.View):
+    mixer.music.load('Sprite/On My Way.wav')
+    mixer.music.play(-1)
+    mixer.music.set_volume(0.5)
+
     def on_show_view(self):
         arcade.set_background_color(arcade.color.WHITE)
 
