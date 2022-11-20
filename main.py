@@ -114,7 +114,7 @@ class MyGame(arcade.View):
 
     def setup_level_one(self):
         for i in range(self.enemy_diff):
-            enemy = arcade.Sprite("Sprite/enemySpaceship2.png")
+            enemy = arcade.Sprite("Sprite/spr_enemy.png")
             enemy.scale = SPRITE_SCALING_enemy
 
             enemy.center_x = SCREEN_WIDTH - enemy.width
@@ -326,7 +326,7 @@ class MyGame(arcade.View):
         # Set up the player
         self.score = 0
 
-        self.player_sprite = arcade.Sprite("Sprite/playerSpaceship.png", SPRITE_SCALING_PLAYER)
+        self.player_sprite = arcade.Sprite("Sprite/spr_player.png", SPRITE_SCALING_PLAYER)
         self.player_sprite.center_x = 400
         self.player_sprite.center_y = 100
         self.player_list.append(self.player_sprite)
@@ -361,7 +361,7 @@ class MyGame(arcade.View):
         if self.total_time > self.enemy_diff and self.score < 20:
             for i in range(self.enemy_count):
 
-                enemy = arcade.Sprite("Sprite/enemySpaceship2.png", SPRITE_SCALING_enemy)
+                enemy = arcade.Sprite("Sprite/spr_enemy.png", SPRITE_SCALING_enemy)
 
                 enemy_placed_successfully = False
 
