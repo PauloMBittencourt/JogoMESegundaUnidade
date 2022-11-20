@@ -376,7 +376,7 @@ class MyGame(arcade.View):
             self.total_time = 0.0
             self.enemy_diff -= 0.005
 
-        if self.score >= 2:
+        if self.score >= 20:
             self.game_state = WIN_GAME
 
         self.update_enemies()
