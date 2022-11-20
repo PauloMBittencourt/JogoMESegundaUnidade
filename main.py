@@ -355,9 +355,6 @@ class MyGame(arcade.View):
         self.process_player_bullets()
         self.process_collision()
 
-        # if len(self.enemy_list) == 0:
-        #   self.setup_level_one()
-
         if self.total_time > self.enemy_diff and self.score < 20:
             for i in range(self.enemy_count):
 
@@ -379,10 +376,17 @@ class MyGame(arcade.View):
             self.total_time = 0.0
             self.enemy_diff -= 0.005
 
+        if self.score >= 2:
+            self.game_state = WIN_GAME
+
         self.update_enemies()
 
         if self.game_state == GAME_OVER:
             return
+
+        if self.game_state == WIN_GAME:
+            win = VictoryView(self)
+            self.window.show_view(win)
 
 
 class PauseView(arcade.View):
@@ -430,6 +434,31 @@ class PauseView(arcade.View):
             game.setup()
             self.window.show_view(game)
 
+class VictoryView(arcade.View):
+    def __init__(self, game_view):
+        super().__init__()
+        self.game_view = game_view
+
+    def on_draw(self):
+        self.clear()
+
+        player_sprite = self.game_view.player_sprite
+        player_sprite.draw()
+
+        arcade.draw_text("You Win, The aliance win this battle", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 50,
+                         arcade.color.WHITE, font_size=30, anchor_x="center")
+
+        arcade.draw_text("But not the war", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 5,
+                         arcade.color.RED, font_size=25, anchor_x="center")
+
+        arcade.draw_text("To play again press Enter", SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 80,
+                         arcade.color.WHITE, font_size=25, anchor_x="center")
+
+    def on_key_press(self, key, modifiers):
+        if key == arcade.key.ENTER:
+            game = MyGame()
+            game.setup()
+            self.window.show_view(game)
 
 def main():
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
