@@ -338,14 +338,27 @@ class MyGame(arcade.View):
             self.player_spd = 650
         else:
             self.player_spd = PLAYER_SPD
+
         if self.right:
-            self.player_sprite.center_x += self.player_spd * delta_time
+            if self.player_sprite.center_x >= SCREEN_WIDTH - 30:
+                self.player_sprite.center_x = SCREEN_WIDTH - 30
+            else:
+                self.player_sprite.center_x += self.player_spd * delta_time
         if self.left:
-            self.player_sprite.center_x -= self.player_spd * delta_time
+            if self.player_sprite.center_x <= 30:
+                self.player_sprite.center_x = 30
+            else:
+                self.player_sprite.center_x -= self.player_spd * delta_time
         if self.up:
-            self.player_sprite.center_y += self.player_spd * delta_time
+            if self.player_sprite.center_y >= SCREEN_HEIGHT - 30:
+                self.player_sprite.center_y = SCREEN_HEIGHT - 30
+            else:
+                self.player_sprite.center_y += self.player_spd * delta_time
         if self.down:
-            self.player_sprite.center_y -= self.player_spd * delta_time
+            if self.player_sprite.center_y <= 30:
+                self.player_sprite.center_y = 30
+            else:
+                self.player_sprite.center_y -= self.player_spd * delta_time
 
         self.total_time += delta_time
 
