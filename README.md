@@ -1,4 +1,4 @@
-# Space Invaders 2
+# Space Battle
 
 
 Jogo criado para a matéria da faculdade, a matéria em questão é Processamento de Imagens, usando de inspiração do antigo jogo chamado "Space Invaders"
